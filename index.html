@@ -1,0 +1,319 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
+        <script language="javascript" type="text/javascript" src="js/st/sencha-touch-debug.js"></script>
+        <link type="text/css" rel="stylesheet" href="js/st/resources/css/sencha-touch.css" /> 
+		<link type="text/css" rel="stylesheet" href="general.css" /> 
+		
+        <script type="text/javascript">
+        
+        
+        Ext.setup({
+            onReady: function(){
+				
+				//アクセストークンを入れてください
+				var access_token = '';
+				
+				if(!access_token) {
+					alert('アクセストークンがありません。すべての処理を中断します。');
+				}
+				//target と するIDは共通で持っておく。
+				var targetid = null;
+				//野村先生のID
+				targetid = '1172599214';
+				
+				//ターゲットのprofile
+				var profile = {};
+				
+                Ext.regModel('Feed', {
+                	//
+                    fields: ['id', 'message', 'likes','comments','story','picture']
+                });
+                
+                Ext.regModel('Profile', {
+                    fields: [
+						{name: 'id', type: 'string'},
+						{name: 'name', type: 'string'},
+						{name: 'bio', type: 'string'},
+						{name: 'gender', type: 'string'},
+						{name: 'picture', type: 'string'}]
+                });
+                
+                /*=================================================================*/
+                /*feedのリストを生成*/ 
+               	/*=================================================================*/  
+                
+              	//feedのデータストア
+                var store = new Ext.data.Store({
+                    model: 'Feed',
+                    proxy: {
+                        type: 'scripttag',
+                        
+                        //ターゲットのフィードを取得する
+                        url : 'https://graph.facebook.com/'+ targetid + '/feed',
+                        extraParams: {
+                            access_token: access_token
+                        },
+                        reader: {
+                            type: 'json',
+                            root: 'data'
+                        }
+                    },
+                    listeners:{
+                    	//urlが読み込まれた瞬間に発生するイベント
+                    	//第２引数に取得したデータが格納されている。
+                    	load:function(e,records,status){
+                    		//console.debug(arguments);
+                    		if(!status) return;
+                    		console.debug(records);
+                    	}
+                    }
+                });
+                
+                
+                var list = new Ext.List({
+                    store: store,
+                    itemTpl: [
+                    	'<div class="record">',
+	                        '<div class="pm">',
+				    '<img src="{picture}" class="img"/>',
+				    '</div>',
+				    '<span class="message">{message}</span>',
+				    '<div class="res">',
+				    
+					'<div class="label">イイネした人</div>',
+					'<tpl for="likes.data">',
+					    '<div>{name}　</div>',
+					'</tpl>',
+					
+					'<div class="label">コメントした人</div>',
+					'<tpl for="comments.data">',
+					    '<div>{message} by {from.name}</div>',
+					'</tpl>',
+
+				    '</div>',
+				    '<div class="story"><font class="story">{story}</font></div>',
+                        '</div>'
+                    ].join(''),
+                    listeners: {
+                        // itemtap: function(){
+                            // window.open("http://www.yahoo.co.jp");
+                        // },
+                        itemtap: function(e,index){
+                        	//console.debug(arguments);
+                        	//console.debug(store.data.items[index].data.id);
+                        	
+                        	//投稿記事IDを分割し配列化
+                        	var postid = fstore.data.items[index].data.id.split('_');
+                        	//投稿記事へのリンクを生成＆新しいウィンドウで開く(Facebookのページに飛ぶ)
+                        	window.open('http://www.facebook.com/'+postid[0]+'/posts/'+postid[1]);
+                        },
+                        render: function()
+                        {
+                            store.load();
+                        },
+               		}
+                });
+                
+                
+                 
+                
+                
+               
+                var update　= null;
+                var now = null;
+				//好きな人のフィードのパネル
+                var feedpn = new Ext.Panel({
+                    layout: 'card',
+                    title: 'Feed',
+                    iconCls: 'download',
+                    items: [
+                        list,
+                        // {html:'aaaa'}
+		           	],
+		          	listeners:
+		          	{
+		          		show:function()
+                        {
+                        	nowdate = new Date();
+							//現在の時刻を取得。秒の形にフォーマット
+                        	now = nowdate.getTime() / 1000;
+							//１万秒以内を評価する
+                        	now = now % 10000;
+                        	
+                        	if(!update) return;
+                        	//前回の更新から１０分(６００秒)経過していれば、再取得
+                        	if((now - update) < 600) return;
+                        	list.fireEvent('render');
+                        	update = now;
+                        }
+		          	}
+                });
+                
+                //好きな人のプロフィールのパネル
+                 var profilepn = new Ext.Panel({
+                    layout: 'card',
+                    title: 'Profile',
+		    iconCls: 'download',
+		    scroll:'vertical',
+                    profileTpl: new Ext.XTemplate([
+				       '<div class="profile">',
+	                        '<div class="imgname">',
+	                        	'<img src="{picture}" class="img" />',
+					'<div><font class="name">{name}</font></div>',
+					'<div><font class="genderlabel">性別：</font><font class="gender">{gender}</font></div>',
+	                        '</div>',
+	                         '<div class="detail">',
+	                     		'<div class="label">自己紹介</div>',
+	                        	'<div>{bio}</div>',
+	                        '</div>',
+                        '</div>'
+				    ]),
+                    listeners:
+                    {
+                    	render: function()
+                        {
+                        	var panel = profilepn;
+                            profileTpl = panel.profileTpl;
+                            
+                            //JSONPを利用してクロスドメイン通信
+                            Ext.util.JSONP.request({
+                            url: 'https://graph.facebook.com/'+ targetid,
+                            callbackKey: 'callback',
+                            params: {                    
+                                fields:'id,name,bio,picture,gender',
+                            	access_token: access_token
+                            },
+                            
+                            callback: function(result) {
+                                if (result) {
+                                	//テンプレートをアプライしたテンプレートでアップデート
+                                	//applyTemplate->リターン結果をテンプレート内に適用
+                                    profilepn.update(profileTpl.applyTemplate(result));   
+                                } else {
+                                    alert('There was an error retrieving the weather.');
+                                }
+                                profilepn.setLoading(false);
+                            }
+                        });
+                        },
+                    }
+                });
+
+                new Ext.TabPanel({
+                    fullscreen: true,
+                    tabBar: {
+                        dock: 'bottom',
+                        ui: 'dark',
+                        layout: {
+                            pack: 'center'
+                        }
+                    },
+                    items: [
+                        profilepn,
+                      	feedpn,
+                    ]
+                });
+            }
+        });
+        
+        </script>
+
+    </head>
+    <body>
+    </body>
+
+</html>
+
+
+
+
+
+
+
+
+<!--
+	// /*=================================================================*/
+                // /*Profileのリストを生成*/ 
+               	// /*=================================================================*/               
+//                
+                // //profileのデータストア
+                // var dstore =  new Ext.data.Store({
+                	// model: 'Profile'
+                // });
+//         		
+        		// //クロスドメイン通信のためのデータストア
+                // var xstore = new Ext.data.Store({
+                    // model: 'Profile',
+                    // proxy: {
+//                         
+                        // type: 'scripttag',
+//                         
+                        // //ターゲットのフィードを取得する
+                        // url : 'https://graph.facebook.com/'+ targetid,
+                        // extraParams: {
+                        	// //欲しいデータはここにカンマ区切りで追加していく(例：birthdayなど。ただし、permissionが承認済みでないと取得不可能なものもある。)
+                        	// fields:'id,name,bio,picture,gender',
+                            // access_token: 'AAACZAjr7cgDsBACv8NaKPyB9wav4HKBsDiD0cbVinTzLjqDGBQR9BSTezYin3IlVtZBRRGqVZA00O7vJpftaiCnLnrsDKjeeZCBozIE9VQZDZD',
+                       	// }
+                    // },
+                    // reader:{
+                    	// type:'json',
+                    	// root: undefined
+                    // },
+                    // listeners:{
+                    	// //urlが読み込まれた瞬間のイベント
+                    	// //第２引数に取得したデータが格納されている。
+                    	// load:function(e,records,status){
+                    		// console.debug(e.proxy.reader.rawData);
+                    		// // profile = e.proxy.lastRequest.operation.response;
+//                     		
+                    		// if(!status) return;
+                    		// // console.debug(records);
+                    		// // console.debug(e);
+//                     		
+                    		// //プロキシによって得られたレスポンスデータを取得
+                    		// var profile = e.proxy.reader.rawData;
+//                     		
+                    		// //データを格納
+                    		// dstore.loadData([
+                    				// {
+                    					// id:profile.id, 
+                    					// name:profile.name, 
+                    					// bio:profile.bio,
+                    					// gender:profile.gender,
+                    					// picture:profile.picture
+                    				// }],false);
+                  		// }
+                    // }
+                // });
+                // pstore.load();
+	                // //profileを表示するパネル
+                // var proflist = new Ext.List({
+                    // store: dstore,
+                    // itemTpl: [
+                	   	// '<div class="profile">',
+	                        // '<div class="imgname">',
+	                        	// '<img src="{picture}" class="img" />',
+	                        	// '<div>名前：{name}</div>',
+	                        	// '<div>性別：{gender}</div>',
+	                        // '</div>',
+	                         // '<div class="detail">',
+	                     		// '<div>自己紹介</div>',
+	                        	// '<div>{bio}</div>',
+	                        // '</div>',
+                        // '</div>',
+                    // ].join(''),
+                    // listeners: {
+                        // render: function()
+                        // {
+                            // xstore.load();
+                        // },
+                    // }
+                // });
+
+                
+                
+
+	
+	-->

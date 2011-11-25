@@ -1,0 +1,128 @@
+body{
+    margin: 0;
+    padding: 0;
+}
+
+
+div.profile
+{
+    width:auto;
+    height:auto;
+}
+
+div.profile div.imgname 
+{
+    padding:5px 10px;
+    height:140px;
+
+}
+
+div.imgname .img
+{
+
+    float:left;
+    padding:4px;
+    margin:2px;
+    border:solid 1px #DDD;
+    zoom:200%;
+    max-height:200px;
+    max-width:200px;
+}
+
+div.imgname .name
+{
+    padding-left:5px;
+    font-size:200%;
+}
+
+
+
+div.imgname .genderlabel
+{
+    padding-left:5px;
+    font-size:88%
+}
+div.imgname .gender
+{
+
+}
+
+
+div.profile .bar
+{
+    float:left;
+    border:none;
+    width:5000px;
+    height:1px;
+    padding:0px;
+    border-bottom:solid 1px #DDD;
+    border-top:solid 1px #999;
+}
+
+div.detail div.label
+{
+    height:30px;
+    width:5000px;
+    background: -webkit-gradient(linear, left top, left bottom, from(#EEE), to(#CCC));
+    color:#2F2F2F;
+    border-top:solid 1px #CCC;
+    border-bottom:solid 1px #999;
+}
+
+
+div.record span.message
+{
+	color:#002757;
+}
+
+
+
+
+
+
+
+
+
+
+/*
+ *フィード側CSS
+ * */
+
+div.pm
+{
+    width:100px;
+    height:100px;
+  }
+
+div.pm .img
+{
+    max-width:80px;
+    max-height:80px;
+    padding 5px;
+    margin:10px;
+
+    border:solid 1px #DDD;
+
+}
+
+div.res div.label
+{
+    height:30px;
+    width:5000px;
+    background: -webkit-gradient(linear, left top, left bottom, from(#EEE), to(#CCC));
+    color:#2F2F2F;
+    border-top:solid 1px #CCC;
+    border-bottom:solid 1px #999;
+
+}
+
+div.story
+{
+
+}
+
+div.story font.story
+{
+    color:#BBB;
+    font-size:70%;
+}
